@@ -270,6 +270,7 @@ class _NutritionistMarketplaceScreenState
                                   rating: n.rating,
                                   clients: n.clientCount,
                                   pricePerMonth: n.price.toInt(),
+                                  profileImageUrl: n.profileImageUrl,
                                   onViewProfile: () {
                                     if (isPending) {
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -290,6 +291,7 @@ class _NutritionistMarketplaceScreenState
                                         'bio': n.bio,
                                         'whatsappNumber': n.whatsappNumber,
                                         'email': n.email,
+                                        'profileImageUrl': n.profileImageUrl,
                                       },
                                     );
                                   },

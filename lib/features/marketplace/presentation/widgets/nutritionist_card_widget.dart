@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,6 +17,7 @@ class NutritionistCardWidget extends StatelessWidget {
     required this.rating,
     required this.clients,
     required this.pricePerMonth,
+    this.profileImageUrl,
     this.onViewProfile,
   });
 
@@ -22,7 +26,102 @@ class NutritionistCardWidget extends StatelessWidget {
   final double rating;
   final int clients;
   final int pricePerMonth;
+  final String? profileImageUrl;
   final VoidCallback? onViewProfile;
+
+  /// Builds the appropriate image widget for handling both Base64 and network URLs
+  Widget _buildAvatarImage() {
+    if (profileImageUrl == null || profileImageUrl!.isEmpty) {
+      // No image - show initials
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            name.isNotEmpty ? name[0] : 'N',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Check if it's a Base64 string or a URL
+    bool isBase64 = !profileImageUrl!.startsWith('http');
+
+    if (isBase64) {
+      // It's Base64 - decode and display using MemoryImage
+      try {
+        final imageBytes = base64Decode(profileImageUrl!);
+        return ClipOval(
+          child: Image.memory(
+            imageBytes,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              width: 56,
+              height: 56,
+              color: AppColors.primaryLight,
+              child: Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: 28,
+              ),
+            ),
+          ),
+        );
+      } catch (e) {
+        // Failed to decode - show error widget
+        return Container(
+          width: 56,
+          height: 56,
+          color: AppColors.primaryLight,
+          child: Icon(
+            Icons.person,
+            color: AppColors.primary,
+            size: 28,
+          ),
+        );
+      }
+    } else {
+      // It's a URL - use CachedNetworkImage
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: profileImageUrl!,
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: 56,
+            height: 56,
+            color: AppColors.primaryLight,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 56,
+            height: 56,
+            color: AppColors.primaryLight,
+            child: Icon(
+              Icons.person,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,18 +141,7 @@ class NutritionistCardWidget extends StatelessWidget {
       child: Row(
         children: [
           // ── Avatar ──
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.primaryLight,
-            child: Text(
-              name.isNotEmpty ? name[0] : 'N',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
+          _buildAvatarImage(),
           const SizedBox(width: 14),
 
           // ── Info ──

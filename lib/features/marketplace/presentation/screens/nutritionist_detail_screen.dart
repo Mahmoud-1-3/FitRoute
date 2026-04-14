@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +25,7 @@ class NutritionistDetailScreen extends ConsumerStatefulWidget {
     required this.clients,
     required this.price,
     required this.bio,
+    this.profileImageUrl,
   });
 
   final String nutritionistId;
@@ -31,6 +35,7 @@ class NutritionistDetailScreen extends ConsumerStatefulWidget {
   final int clients;
   final int price;
   final String bio;
+  final String? profileImageUrl;
 
   @override
   ConsumerState<NutritionistDetailScreen> createState() => _NutritionistDetailScreenState();
@@ -38,6 +43,102 @@ class NutritionistDetailScreen extends ConsumerStatefulWidget {
 
 class _NutritionistDetailScreenState extends ConsumerState<NutritionistDetailScreen> {
   bool _isLoading = false;
+
+  /// Builds the appropriate image widget for handling both Base64 and network URLs
+  Widget _buildAvatarImage() {
+    if (widget.profileImageUrl == null || widget.profileImageUrl!.isEmpty) {
+      // No image - show initials
+      return Container(
+        width: 88,
+        height: 88,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: CircleAvatar(
+          radius: 40,
+          backgroundColor: AppColors.primaryLight,
+          child: Text(
+            widget.name.isNotEmpty ? widget.name[0] : 'N',
+            style: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Check if it's a Base64 string or a URL
+    bool isBase64 = !widget.profileImageUrl!.startsWith('http');
+
+    if (isBase64) {
+      // It's Base64 - decode and display using MemoryImage
+      try {
+        final imageBytes = base64Decode(widget.profileImageUrl!);
+        return ClipOval(
+          child: Image.memory(
+            imageBytes,
+            width: 88,
+            height: 88,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              width: 88,
+              height: 88,
+              color: AppColors.primaryLight,
+              child: Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: 44,
+              ),
+            ),
+          ),
+        );
+      } catch (e) {
+        // Failed to decode - show error widget
+        return Container(
+          width: 88,
+          height: 88,
+          color: AppColors.primaryLight,
+          child: Icon(
+            Icons.person,
+            color: AppColors.primary,
+            size: 44,
+          ),
+        );
+      }
+    } else {
+      // It's a URL - use CachedNetworkImage
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: widget.profileImageUrl!,
+          width: 88,
+          height: 88,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: 88,
+            height: 88,
+            color: Colors.white,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 88,
+            height: 88,
+            color: AppColors.primaryLight,
+            child: Icon(
+              Icons.person,
+              color: AppColors.primary,
+              size: 44,
+            ),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,22 +200,7 @@ class _NutritionistDetailScreenState extends ConsumerState<NutritionistDetailScr
                             ),
                             const SizedBox(height: 8),
                             // Avatar
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: Colors.white,
-                              child: CircleAvatar(
-                                radius: 40,
-                                backgroundColor: AppColors.primaryLight,
-                                child: Text(
-                                  widget.name.isNotEmpty ? widget.name[0] : 'N',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            _buildAvatarImage(),
                             const SizedBox(height: 12),
                             Text(
                               widget.name,

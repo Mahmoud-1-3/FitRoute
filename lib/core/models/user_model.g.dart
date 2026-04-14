@@ -28,13 +28,14 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       activityLevel: fields[8] as String,
       goal: fields[9] as String,
       assignedNutritionistId: fields[10] as String?,
+      profileImageUrl: fields[11] == null ? '' : fields[11] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(9)
       ..write(obj.goal)
       ..writeByte(10)
-      ..write(obj.assignedNutritionistId);
+      ..write(obj.assignedNutritionistId)
+      ..writeByte(11)
+      ..write(obj.profileImageUrl);
   }
 
   @override
@@ -86,6 +89,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       activityLevel: json['activityLevel'] as String,
       goal: json['goal'] as String,
       assignedNutritionistId: json['assignedNutritionistId'] as String?,
+      profileImageUrl: json['profileImageUrl'] as String? ?? '',
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -100,4 +104,5 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'activityLevel': instance.activityLevel,
       'goal': instance.goal,
       'assignedNutritionistId': instance.assignedNutritionistId,
+      'profileImageUrl': instance.profileImageUrl,
     };

@@ -97,6 +97,7 @@ class RequestsTabView extends ConsumerWidget {
                   goal: user.goal,
                   age: user.age,
                   weight: user.weight,
+                  profileImageUrl: user.profileImageUrl,
                   onViewDetails: () {
                     showModalBottomSheet(
                       context: context,

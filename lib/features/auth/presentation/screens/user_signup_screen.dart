@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/validation_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/form_fields.dart';
 import '../controllers/auth_controller.dart';
@@ -192,13 +193,7 @@ class _UserSignupScreenState extends ConsumerState<UserSignupScreen> {
                         controller: _ageCtrl,
                         keyboardType: TextInputType.number,
                         prefixIcon: const Icon(Icons.cake_outlined, size: 20),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Required';
-                          final n = int.tryParse(v.trim());
-                          if (n == null) return 'Enter a valid number';
-                          if (n < 10 || n > 100) return '10 – 100 years';
-                          return null;
-                        },
+                        validator: ValidationConstants.validateAge,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -248,13 +243,7 @@ class _UserSignupScreenState extends ConsumerState<UserSignupScreen> {
                           Icons.monitor_weight_outlined,
                           size: 20,
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Required';
-                          final n = double.tryParse(v.trim());
-                          if (n == null) return 'Enter a valid number';
-                          if (n < 20 || n > 300) return '20 – 300 kg';
-                          return null;
-                        },
+                        validator: ValidationConstants.validateWeight,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -265,13 +254,7 @@ class _UserSignupScreenState extends ConsumerState<UserSignupScreen> {
                         controller: _heightCtrl,
                         keyboardType: TextInputType.number,
                         prefixIcon: const Icon(Icons.height_rounded, size: 20),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Required';
-                          final n = double.tryParse(v.trim());
-                          if (n == null) return 'Enter a valid number';
-                          if (n < 80 || n > 250) return '80 – 250 cm';
-                          return null;
-                        },
+                        validator: ValidationConstants.validateHeight,
                       ),
                     ),
                   ],

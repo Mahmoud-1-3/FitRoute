@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -55,18 +58,7 @@ class UserOverviewBottomSheet extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.primaryLight,
-                  child: Text(
-                    user.fullName.isNotEmpty ? user.fullName[0] : 'U',
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
+                _buildAvatarImage(),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -210,6 +202,86 @@ class UserOverviewBottomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Builds user avatar with support for both Base64-encoded and URL-based images
+  Widget _buildAvatarImage() {
+    if (user.profileImageUrl == null || user.profileImageUrl!.isEmpty) {
+      // Fallback: Show initials
+      return CircleAvatar(
+        radius: 28,
+        backgroundColor: AppColors.primaryLight,
+        child: Text(
+          user.fullName.isNotEmpty ? user.fullName[0] : 'U',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
+
+    final profileImageUrl = user.profileImageUrl!;
+    final bool isBase64 = !profileImageUrl.startsWith('http');
+
+    if (isBase64) {
+      // Base64-encoded image
+      try {
+        final imageBytes = base64Decode(profileImageUrl);
+        return ClipOval(
+          child: Image.memory(
+            imageBytes,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+          ),
+        );
+      } catch (e) {
+        // Error decoding, show fallback
+        return CircleAvatar(
+          radius: 28,
+          backgroundColor: AppColors.primaryLight,
+          child: Text(
+            user.fullName.isNotEmpty ? user.fullName[0] : 'U',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        );
+      }
+    } else {
+      // URL-based image
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: profileImageUrl,
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.primaryLight,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+            ),
+          ),
+          errorWidget: (context, url, error) => CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.primaryLight,
+            child: Text(
+              user.fullName.isNotEmpty ? user.fullName[0] : 'U',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 

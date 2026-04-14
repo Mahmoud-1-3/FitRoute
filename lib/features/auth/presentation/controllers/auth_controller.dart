@@ -174,6 +174,8 @@ class AuthController extends StateNotifier<AuthState> {
         rating: 0.0,
         clientCount: 0,
         whatsappNumber: '',
+        profileImageUrl: '',
+        instagramUrl: '',
       );
 
       // Also save a UserModel so the app knows the current role.

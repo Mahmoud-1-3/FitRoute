@@ -26,13 +26,15 @@ class NutritionistModelAdapter extends TypeAdapter<NutritionistModel> {
       rating: fields[6] as double,
       clientCount: fields[7] as int,
       whatsappNumber: fields[8] as String,
+      profileImageUrl: fields[9] == null ? '' : fields[9] as String,
+      instagramUrl: fields[10] == null ? '' : fields[10] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, NutritionistModel obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +52,11 @@ class NutritionistModelAdapter extends TypeAdapter<NutritionistModel> {
       ..writeByte(7)
       ..write(obj.clientCount)
       ..writeByte(8)
-      ..write(obj.whatsappNumber);
+      ..write(obj.whatsappNumber)
+      ..writeByte(9)
+      ..write(obj.profileImageUrl)
+      ..writeByte(10)
+      ..write(obj.instagramUrl);
   }
 
   @override
@@ -81,6 +87,8 @@ NutritionistModel _$NutritionistModelFromJson(Map<String, dynamic> json) =>
       rating: (json['rating'] as num).toDouble(),
       clientCount: json['clientCount'] as int,
       whatsappNumber: json['whatsappNumber'] as String,
+      profileImageUrl: json['profileImageUrl'] as String? ?? '',
+      instagramUrl: json['instagramUrl'] as String? ?? '',
     );
 
 Map<String, dynamic> _$NutritionistModelToJson(NutritionistModel instance) =>
@@ -94,4 +102,6 @@ Map<String, dynamic> _$NutritionistModelToJson(NutritionistModel instance) =>
       'rating': instance.rating,
       'clientCount': instance.clientCount,
       'whatsappNumber': instance.whatsappNumber,
+      'profileImageUrl': instance.profileImageUrl,
+      'instagramUrl': instance.instagramUrl,
     };

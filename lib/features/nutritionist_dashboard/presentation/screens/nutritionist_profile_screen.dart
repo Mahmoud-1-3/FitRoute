@@ -1,14 +1,21 @@
+import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/models/nutritionist_model.dart';
 import '../../../../core/services/local_storage_service.dart';
+import '../../../../core/services/firestore_service.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../shared/data/nutritionist_repository.dart';
 
 /// ─── Nutritionist Profile Screen ───────────────────────────────────────────
 /// The nutritionist's own profile management page (3rd tab in their shell).
@@ -31,9 +38,28 @@ class _NutritionistProfileScreenState
 
   late List<String> _specialties;
   bool _hasChanges = false;
+  bool _isUploading = false;
+  File? _pickedImage;
 
   void _markChanged() {
     if (!_hasChanges) setState(() => _hasChanges = true);
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    // Heavily compress the image down to < 50KB to safely fit inside a Firestore document!
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 250,
+      maxHeight: 250,
+      imageQuality: 60,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _pickedImage = File(pickedFile.path);
+        _hasChanges = true;
+      });
+    }
   }
 
   @override
@@ -79,15 +105,24 @@ class _NutritionistProfileScreenState
         // Only update text fields if they haven't been edited by the user yet 
         // to prevent overwriting during typing.
         if (!_hasChanges) {
-          if (_bioCtrl.text != nutritionist.bio) _bioCtrl.text = nutritionist.bio;
+          if (_bioCtrl.text != nutritionist.bio) {
+             _bioCtrl.text = nutritionist.bio.isEmpty 
+                 ? 'Registered Dietitian with 10 years of experience helping clients achieve sustainable fat loss and performance goals. Specialty: personalized plans.'
+                 : nutritionist.bio;
+          }
           if (_priceCtrl.text != nutritionist.price.toString() && nutritionist.price > 0) {
             _priceCtrl.text = nutritionist.price.toString();
           }
           if (_whatsappCtrl.text != nutritionist.whatsappNumber) {
             _whatsappCtrl.text = nutritionist.whatsappNumber;
           }
-          if (_specialties.isEmpty && nutritionist.specialties.isNotEmpty) {
-            _specialties = List.from(nutritionist.specialties);
+          if (_instagramCtrl.text != nutritionist.instagramUrl) {
+            _instagramCtrl.text = nutritionist.instagramUrl;
+          }
+          if (_specialties.isEmpty) {
+            _specialties = nutritionist.specialties.isEmpty
+                ? ['Fat Loss', 'Sports Nutrition']
+                : List.from(nutritionist.specialties);
           }
         }
 
@@ -120,38 +155,53 @@ class _NutritionistProfileScreenState
                     Center(
                       child: Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 52,
-                            backgroundColor: AppColors.primaryLight,
-                            child: Text(
-                              nutritionist.fullName.isNotEmpty
-                                  ? nutritionist.fullName[0].toUpperCase()
-                                  : 'N',
-                              style: GoogleFonts.poppins(
-                                fontSize: 40,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: CircleAvatar(
+                              radius: 52,
+                              backgroundColor: AppColors.primaryLight,
+                              backgroundImage: _pickedImage != null
+                                  ? FileImage(_pickedImage!) as ImageProvider
+                                  : (nutritionist.profileImageUrl.isNotEmpty
+                                      ? (nutritionist.profileImageUrl.startsWith('http')
+                                          ? NetworkImage(nutritionist.profileImageUrl)
+                                          : MemoryImage(base64Decode(nutritionist.profileImageUrl))) as ImageProvider
+                                      : null),
+                              child: _pickedImage == null && nutritionist.profileImageUrl.isEmpty
+                                  ? Text(
+                                      nutritionist.fullName.isNotEmpty
+                                          ? nutritionist.fullName[0].toUpperCase()
+                                          : 'N',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
+                                  : null,
                             ),
                           ),
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2.5,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.5,
+                                  ),
                                 ),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 16,
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
@@ -305,15 +355,19 @@ class _NutritionistProfileScreenState
                       child: Column(
                         children: [
                           _ContactField(
-                            icon: Icons.chat_rounded,
+                            icon: FontAwesomeIcons.whatsapp,
+                            iconColor: const Color(0xFF25D366),
                             label: 'WhatsApp',
+                            hintText: 'Enter your WhatsApp Number or link',
                             controller: _whatsappCtrl,
                             onChanged: (_) => _markChanged(),
                           ),
                           const Divider(height: 20),
                           _ContactField(
-                            icon: Icons.camera_alt_outlined,
+                            icon: FontAwesomeIcons.instagram,
+                            iconColor: const Color(0xFFE1306C),
                             label: 'Instagram',
+                            hintText: 'Enter your Instagram profile URL',
                             controller: _instagramCtrl,
                             onChanged: (_) => _markChanged(),
                           ),
@@ -369,27 +423,60 @@ class _NutritionistProfileScreenState
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _hasChanges
-                        ? () {
-                            setState(() => _hasChanges = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Profile saved ✓',
-                                  style: GoogleFonts.poppins(fontSize: 13),
-                                ),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppSizes.radiusMd,
+                    onPressed: _hasChanges && !_isUploading
+                        ? () async {
+                            setState(() => _isUploading = true);
+                            try {
+                              String updatedImageUrl = nutritionist.profileImageUrl;
+                              
+                              if (_pickedImage != null) {
+                                // Instead of Firebase Storage, we convert the tiny compressed image to Base64
+                                final bytes = await _pickedImage!.readAsBytes();
+                                updatedImageUrl = base64Encode(bytes);
+                              }
+
+                              final updatedNut = nutritionist.copyWith(
+                                bio: _bioCtrl.text.trim(),
+                                price: double.tryParse(_priceCtrl.text) ?? nutritionist.price,
+                                whatsappNumber: _whatsappCtrl.text.trim(),
+                                instagramUrl: _instagramCtrl.text.trim(),
+                                specialties: _specialties,
+                                profileImageUrl: updatedImageUrl,
+                              );
+
+                              await ref.read(nutritionistRepositoryProvider).saveNutritionist(updatedNut);
+                              await ref.read(firestoreServiceProvider).saveNutritionistToCloud(updatedNut);
+
+                              if (mounted) {
+                                setState(() {
+                                  _hasChanges = false;
+                                  _isUploading = false;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Profile saved ✓', style: GoogleFonts.poppins(fontSize: 13)),
+                                    backgroundColor: AppColors.primary,
+                                    behavior: SnackBarBehavior.floating,
                                   ),
-                                ),
-                              ),
-                            );
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => _isUploading = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error saving profile: $e')),
+                                );
+                              }
+                            }
                           }
                         : null,
-                    child: const Text('Save Changes'),
+                    child: _isUploading
+                        ? const SizedBox(
+                            width: 20, 
+                            height: 20, 
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text('Save Changes'),
                   ),
                 ),
               ),
@@ -555,13 +642,17 @@ class _SpecialtyChip extends StatelessWidget {
 class _ContactField extends StatelessWidget {
   const _ContactField({
     required this.icon,
+    required this.iconColor,
     required this.label,
+    required this.hintText,
     required this.controller,
     this.onChanged,
   });
 
   final IconData icon;
+  final Color iconColor;
   final String label;
+  final String hintText;
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
 
@@ -573,10 +664,10 @@ class _ContactField extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
+            color: iconColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 18, color: AppColors.primary),
+          child: Icon(icon, size: 18, color: iconColor),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -598,7 +689,12 @@ class _ContactField extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.textHint,
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                   isDense: true,

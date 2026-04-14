@@ -36,6 +36,12 @@ class NutritionistModel {
   @HiveField(8)
   final String whatsappNumber;
 
+  @HiveField(9, defaultValue: '')
+  final String profileImageUrl;
+
+  @HiveField(10, defaultValue: '')
+  final String instagramUrl;
+
   const NutritionistModel({
     required this.id,
     required this.email,
@@ -46,6 +52,8 @@ class NutritionistModel {
     required this.rating,
     required this.clientCount,
     required this.whatsappNumber,
+    this.profileImageUrl = '',
+    this.instagramUrl = '',
   });
 
   factory NutritionistModel.fromJson(Map<String, dynamic> json) =>
@@ -63,6 +71,8 @@ class NutritionistModel {
     double? rating,
     int? clientCount,
     String? whatsappNumber,
+    String? profileImageUrl,
+    String? instagramUrl,
   }) {
     return NutritionistModel(
       id: id ?? this.id,
@@ -74,6 +84,8 @@ class NutritionistModel {
       rating: rating ?? this.rating,
       clientCount: clientCount ?? this.clientCount,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      instagramUrl: instagramUrl ?? this.instagramUrl,
     );
   }
 }

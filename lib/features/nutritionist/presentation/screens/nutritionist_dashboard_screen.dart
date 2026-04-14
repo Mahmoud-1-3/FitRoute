@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/theme/app_theme.dart';
+import '../../../dashboard/presentation/controllers/user_provider.dart';
+import '../../../shared/data/nutritionist_repository.dart';
+import '../../../nutritionist_dashboard/presentation/controllers/active_clients_provider.dart';
+import '../../../nutritionist_dashboard/presentation/controllers/pending_requests_provider.dart';
 import 'clients_tab_view.dart';
 import 'requests_tab_view.dart';
 
 /// ─── Nutritionist Dashboard Screen ─────────────────────────────────────────
 /// Greeting header, quick stats, and Requests / My Clients tab bar.
 
-class NutritionistDashboardScreen extends StatelessWidget {
+class NutritionistDashboardScreen extends ConsumerWidget {
   const NutritionistDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -33,7 +39,7 @@ class NutritionistDashboardScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hello, Dr. Sarah 👋',
+                          'Hello, ${ref.watch(userProvider)?.fullName.split(' ').first ?? 'Doctor'} 👋',
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -84,7 +90,7 @@ class NutritionistDashboardScreen extends StatelessWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.people_rounded,
-                        value: '12',
+                        value: '${ref.watch(activeClientsProvider).valueOrNull?.length ?? 0}',
                         label: 'Active Clients',
                         color: AppColors.primary,
                       ),
@@ -93,7 +99,7 @@ class NutritionistDashboardScreen extends StatelessWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.pending_actions_rounded,
-                        value: '4',
+                        value: '${ref.watch(pendingRequestsProvider).valueOrNull?.length ?? 0}',
                         label: 'Pending',
                         color: const Color(0xFFF59E0B),
                       ),
@@ -102,7 +108,7 @@ class NutritionistDashboardScreen extends StatelessWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.star_rounded,
-                        value: '4.9',
+                        value: '${ref.watch(nutritionistRepositoryProvider).getNutritionist()?.rating.toStringAsFixed(1) ?? '0.0'}',
                         label: 'Rating',
                         color: const Color(0xFF6366F1),
                       ),

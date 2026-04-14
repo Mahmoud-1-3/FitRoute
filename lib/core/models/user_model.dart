@@ -50,6 +50,9 @@ class UserModel {
   @HiveField(10)
   final String? assignedNutritionistId;
 
+  @HiveField(11, defaultValue: '')
+  final String profileImageUrl;
+
   const UserModel({
     required this.id,
     required this.role,
@@ -62,6 +65,7 @@ class UserModel {
     required this.activityLevel,
     required this.goal,
     this.assignedNutritionistId,
+    this.profileImageUrl = '',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -82,6 +86,7 @@ class UserModel {
     String? activityLevel,
     String? goal,
     String? assignedNutritionistId,
+    String? profileImageUrl,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -96,6 +101,7 @@ class UserModel {
       goal: goal ?? this.goal,
       assignedNutritionistId:
           assignedNutritionistId ?? this.assignedNutritionistId,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }
 }

@@ -1,35 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../controllers/active_clients_provider.dart';
 import '../widgets/active_client_card_widget.dart';
 
 /// ─── Nutritionist Clients Screen ───────────────────────────────────────────
 /// Full-page client list with search. Accessed from the Clients tab.
 
-class NutritionistClientsScreen extends StatefulWidget {
+class NutritionistClientsScreen extends ConsumerStatefulWidget {
   const NutritionistClientsScreen({super.key});
 
   @override
-  State<NutritionistClientsScreen> createState() =>
+  ConsumerState<NutritionistClientsScreen> createState() =>
       _NutritionistClientsScreenState();
 }
 
-class _NutritionistClientsScreenState extends State<NutritionistClientsScreen> {
+class _NutritionistClientsScreenState extends ConsumerState<NutritionistClientsScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
-
-  // ── Mock client data ──
-  static const _clients = [
-    _ClientData('Mohamed Hassan', 'Lose Weight', 78.5, 72.0, 8),
-    _ClientData('Nour Ahmed', 'Build Muscle', 62.0, 68.0, 12),
-    _ClientData('Fatma Ali', 'Maintain', 70.2, 70.0, 4),
-    _ClientData('Khaled Mostafa', 'Lose Weight', 90.0, 80.0, 16),
-  ];
-
-  List<_ClientData> get _filtered => _query.isEmpty
-      ? _clients
-      : _clients.where((c) => c.name.toLowerCase().contains(_query)).toList();
 
   @override
   void dispose() {
@@ -39,12 +30,18 @@ class _NutritionistClientsScreenState extends State<NutritionistClientsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final list = _filtered;
+    final activeClientsAsync = ref.watch(activeClientsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
-        child: Column(
+        child: activeClientsAsync.when(
+          data: (clients) {
+            final list = _query.isEmpty
+                ? clients
+                : clients.where((c) => c.fullName.toLowerCase().contains(_query)).toList();
+
+            return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
@@ -65,7 +62,7 @@ class _NutritionistClientsScreenState extends State<NutritionistClientsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                '${_clients.length} active clients',
+                '${clients.length} active clients',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -137,35 +134,43 @@ class _NutritionistClientsScreenState extends State<NutritionistClientsScreen> {
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final c = list[i];
+                        
+                        // Derive a safe target weight just for display
+                        final targetWeight = c.goal.toLowerCase().contains('lose') 
+                            ? c.weight - 5.0 
+                            : (c.goal.toLowerCase().contains('build') ? c.weight + 5.0 : c.weight);
+
                         return ActiveClientCardWidget(
-                          name: c.name,
+                          name: c.fullName,
                           goal: c.goal,
-                          currentWeight: c.currentWeight,
-                          targetWeight: c.targetWeight,
-                          weeksActive: c.weeks,
+                          currentWeight: c.weight,
+                          targetWeight: targetWeight,
+                          weeksActive: 1, // Dummy until createdAt is tracked
                           onViewProgress: () =>
-                              debugPrint('View progress: ${c.name}'),
-                          onMessage: () => debugPrint('Message: ${c.name}'),
+                              debugPrint('View progress: ${c.fullName}'),
+                          onMessage: () async {
+                            final url = Uri.parse('whatsapp://send?phone=0000000000');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Could not open WhatsApp')),
+                                );
+                              }
+                            }
+                          },
                         );
                       },
                     ),
             ),
           ],
-        ),
+        );
+        },
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, st) => Center(child: Text('Error: $e')),
+      ),
       ),
     );
   }
-}
-
-class _ClientData {
-  const _ClientData(
-    this.name,
-    this.goal,
-    this.currentWeight,
-    this.targetWeight,
-    this.weeks,
-  );
-  final String name, goal;
-  final double currentWeight, targetWeight;
-  final int weeks;
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
@@ -15,6 +17,7 @@ class ActiveClientCardWidget extends StatelessWidget {
     required this.currentWeight,
     required this.targetWeight,
     required this.weeksActive,
+    this.profileImageUrl,
     this.onViewProgress,
     this.onMessage,
   });
@@ -24,6 +27,7 @@ class ActiveClientCardWidget extends StatelessWidget {
   final double currentWeight;
   final double targetWeight;
   final int weeksActive;
+  final String? profileImageUrl;
   final VoidCallback? onViewProgress;
   final VoidCallback? onMessage;
 
@@ -58,18 +62,7 @@ class ActiveClientCardWidget extends StatelessWidget {
           // ── Top row: avatar + info ──
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.primaryLight,
-                child: Text(
-                  name.isNotEmpty ? name[0] : 'C',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
+              _buildAvatarImage(),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

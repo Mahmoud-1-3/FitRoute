@@ -112,6 +112,7 @@ final GoRouter appRouter = GoRouter(
           clients: data['clients'] as int? ?? 0,
           price: data['price'] as int? ?? 50,
           bio: data['bio'] as String? ?? '',
+          profileImageUrl: data['profileImageUrl'] as String?,
         );
       },
     ),
