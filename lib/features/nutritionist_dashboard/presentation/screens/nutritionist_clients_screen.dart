@@ -146,6 +146,7 @@ class _NutritionistClientsScreenState extends ConsumerState<NutritionistClientsS
                           currentWeight: c.weight,
                           targetWeight: targetWeight,
                           weeksActive: 1, // Dummy until createdAt is tracked
+                          profileImageUrl: c.profileImageUrl,
                           onViewProgress: () =>
                               debugPrint('View progress: ${c.fullName}'),
                           onMessage: () async {

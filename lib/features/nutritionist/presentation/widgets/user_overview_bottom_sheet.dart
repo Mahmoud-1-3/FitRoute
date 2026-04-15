@@ -206,7 +206,7 @@ class UserOverviewBottomSheet extends StatelessWidget {
 
   /// Builds user avatar with support for both Base64-encoded and URL-based images
   Widget _buildAvatarImage() {
-    if (user.profileImageUrl == null || user.profileImageUrl!.isEmpty) {
+    if (user.profileImageUrl.isEmpty) {
       // Fallback: Show initials
       return CircleAvatar(
         radius: 28,
@@ -222,7 +222,7 @@ class UserOverviewBottomSheet extends StatelessWidget {
       );
     }
 
-    final profileImageUrl = user.profileImageUrl!;
+    final profileImageUrl = user.profileImageUrl;
     final bool isBase64 = !profileImageUrl.startsWith('http');
 
     if (isBase64) {

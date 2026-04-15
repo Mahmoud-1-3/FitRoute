@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/models/nutritionist_model.dart';
 import '../../../../core/models/user_model.dart';
+import '../../../../core/models/meal_model.dart';
+import '../../../../core/models/workout_model.dart';
 import '../../../../core/services/firebase_auth_service.dart';
 import '../../../../core/services/firestore_service.dart';
 import '../../../shared/data/diet_repository.dart';
@@ -136,6 +140,19 @@ class AuthController extends StateNotifier<AuthState> {
       debugPrint('[AuthController] ✅ Plans saved locally (Hive)');
 
       // ──────────────────────────────────────────────────────────────────────
+      // STEP 6 — Save plans to Firestore for real-time sync across devices.
+      //          Wrapped in try/catch so it doesn't block signup.
+      // ──────────────────────────────────────────────────────────────────────
+      try {
+        await _savePlansToFirestore(uid, meals, workouts);
+        debugPrint('[AuthController] ✅ Plans synced to Firestore');
+      } catch (planSyncError) {
+        debugPrint(
+          '[AuthController] ⚠️ Plan sync failed (will retry): $planSyncError',
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────────────────
       // DONE — Mark as authenticated. The UI will navigate to /home.
       // ──────────────────────────────────────────────────────────────────────
       state = state.copyWith(isLoading: false, isAuthenticated: true);
@@ -222,6 +239,7 @@ class AuthController extends StateNotifier<AuthState> {
       final authService = _ref.read(firebaseAuthServiceProvider);
       final credential = await authService.logInWithEmail(email, password);
       final uid = credential.user!.uid;
+      debugPrint('[AuthController] ✅ Login successful — UID: $uid');
 
       // Try to fetch the user profile from Firestore and cache locally.
       try {
@@ -263,8 +281,35 @@ class AuthController extends StateNotifier<AuthState> {
       }
 
       state = state.copyWith(isLoading: false, isAuthenticated: true);
+    } on FirebaseAuthException catch (e) {
+      // Specific Firebase auth error
+      debugPrint('[AuthController] ❌ Firebase Auth Error: ${e.code} - ${e.message}');
+      
+      String errorMsg;
+      if (e.code == 'user-not-found') {
+        errorMsg = 'Email not found. Please check or sign up.';
+      } else if (e.code == 'wrong-password') {
+        errorMsg = 'Wrong password. Please try again.';
+      } else if (e.code == 'network-request-failed') {
+        errorMsg = 'Network error. Please check your internet connection.';
+      } else {
+        errorMsg = e.message ?? 'Login failed. Please try again.';
+      }
+      
+      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: _friendlyError(e));
+      // Network or other errors
+      debugPrint('[AuthController] ❌ Login error: $e');
+      
+      final msg = e.toString().toLowerCase();
+      String errorMsg = 'Network error. Please check your internet connection.';
+      
+      if (!msg.contains('network') && !msg.contains('connection') && 
+          !msg.contains('socket') && !msg.contains('timeout')) {
+        errorMsg = 'Login failed. Please try again.';
+      }
+      
+      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
     }
   }
 
@@ -290,21 +335,78 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
+  /// Save diet and workout plans to Firestore for real-time sync.
+  Future<void> _savePlansToFirestore(
+    String userId,
+    List<MealModel> meals,
+    List<WorkoutModel> workouts,
+  ) async {
+    final firestore = FirebaseFirestore.instance;
+    
+    // Save diet plan
+    if (meals.isNotEmpty) {
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('dietPlans')
+          .doc('current')
+          .set({
+            'meals': meals.map((m) => m.toJson()).toList(),
+            'updatedAt': FieldValue.serverTimestamp(),
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+    }
+    
+    // Save workout plan
+    if (workouts.isNotEmpty) {
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('workoutPlans')
+          .doc('current')
+          .set({
+            'workouts': workouts.map((w) => w.toJson()).toList(),
+            'updatedAt': FieldValue.serverTimestamp(),
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+    }
+  }
+
   /// Converts Firebase exceptions to user-friendly messages.
   String _friendlyError(Object error) {
-    final msg = error.toString();
-    if (msg.contains('email-already-in-use')) {
-      return 'This email is already registered. Try logging in.';
-    } else if (msg.contains('weak-password')) {
-      return 'Password is too weak. Use at least 6 characters.';
-    } else if (msg.contains('invalid-email')) {
-      return 'Please enter a valid email address.';
-    } else if (msg.contains('user-not-found')) {
-      return 'No account found with this email.';
-    } else if (msg.contains('wrong-password')) {
-      return 'Incorrect password. Please try again.';
+    debugPrint('[AuthController] Error: ${error.runtimeType} - $error');
+    
+    // Network errors
+    final msg = error.toString().toLowerCase();
+    if (msg.contains('network') || msg.contains('connection') || 
+        msg.contains('socket') || msg.contains('timeout') ||
+        msg.contains('offline')) {
+      return 'Network error. Please check your internet connection.';
     }
-    return 'Something went wrong. Please try again.';
+    
+    // Firebase Auth errors
+    if (error is FirebaseAuthException) {
+      final code = error.code;
+      
+      switch (code) {
+        case 'email-already-in-use':
+          return 'This email is already registered.';
+        case 'weak-password':
+          return 'Password must be at least 6 characters.';
+        case 'invalid-email':
+          return 'Invalid email address.';
+        case 'user-not-found':
+          return 'Email not found. Please check or sign up.';
+        case 'wrong-password':
+          return 'Wrong password. Please try again.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please try later.';
+        default:
+          return 'Error. Please try again.';
+      }
+    }
+    
+    return 'An error occurred. Please try again.';
   }
 }
 

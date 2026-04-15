@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -21,9 +22,9 @@ class UserNotifier extends StateNotifier<UserModel?> {
 
   void _listenToBox() {
     _box.listenable(keys: ['current_user']).addListener(() {
-      if (mounted) {
-        state = _box.get('current_user');
-      }
+      final updatedUser = _box.get('current_user');
+      debugPrint('[UserProvider] Current user box changed: ${updatedUser?.fullName}, assigned: ${updatedUser?.assignedNutritionistId}');
+      state = updatedUser;
     });
   }
 }

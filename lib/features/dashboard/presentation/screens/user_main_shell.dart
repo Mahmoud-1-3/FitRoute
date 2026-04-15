@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../diet/presentation/screens/diet_plan_screen.dart';
@@ -7,18 +8,20 @@ import '../../../home/presentation/screens/user_home_screen.dart';
 import '../../../marketplace/presentation/screens/nutritionist_marketplace_screen.dart';
 import '../../../profile/presentation/screens/user_profile_screen.dart';
 import '../../../workout/presentation/screens/workout_plan_screen.dart';
+import '../controllers/user_assignment_stream_provider.dart';
 
 /// ─── User Main Shell ───────────────────────────────────────────────────────
 /// Persistent bottom navigation bar with 5 tabs.
+/// Also listens to real-time assignment stream for auto-updates.
 
-class UserMainShell extends StatefulWidget {
+class UserMainShell extends ConsumerStatefulWidget {
   const UserMainShell({super.key});
 
   @override
-  State<UserMainShell> createState() => _UserMainShellState();
+  ConsumerState<UserMainShell> createState() => _UserMainShellState();
 }
 
-class _UserMainShellState extends State<UserMainShell> {
+class _UserMainShellState extends ConsumerState<UserMainShell> {
   int _selectedIndex = 0;
 
   static const List<_TabItem> _tabs = [
@@ -41,10 +44,18 @@ class _UserMainShellState extends State<UserMainShell> {
       NutritionistMarketplaceScreen(),
       UserProfileScreen(),
     ];
+    
+    // Start listening to assignment stream to get real-time updates
+    Future.microtask(() {
+      ref.watch(userAssignmentStreamProvider);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the assignment stream to keep it active
+    ref.watch(userAssignmentStreamProvider);
+    
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
@@ -79,6 +90,9 @@ class _UserMainShellState extends State<UserMainShell> {
     );
   }
 }
+
+/// ─── Consumer State ─────────────────────────────────────────────────────────
+/// (ConsumerState is provided by flutter_riverpod)
 
 // ─── Tab item data ──────────────────────────────────────────────────────────
 

@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/models/meal_model.dart';
 import '../../../../core/services/local_storage_service.dart';
 import '../../../shared/data/diet_repository.dart';
+import './assigned_diet_plan_provider.dart';
 
 /// ─── Diet Controller ───────────────────────────────────────────────────────
 /// Exposes the daily meal list and handles **radio-button** selection with
@@ -28,6 +29,13 @@ class DietController extends StateNotifier<List<MealModel>> {
     if (mounted) {
       state = _repo.getDailyMeals();
     }
+  }
+
+  /// Sync meals from Firestore to Hive when the stream updates
+  void syncFromFirestore(List<MealModel> firestoreMeals) async {
+    if (firestoreMeals.isEmpty) return;
+    await _repo.saveDailyMeals(firestoreMeals);
+    // The Hive listener will automatically trigger _onBoxChanged
   }
 
   /// Ordered list of meal categories – the sequence users must follow.
@@ -108,5 +116,12 @@ class DietController extends StateNotifier<List<MealModel>> {
 final dietControllerProvider =
     StateNotifierProvider<DietController, List<MealModel>>((ref) {
       final repo = ref.read(dietRepositoryProvider);
-      return DietController(repo);
+      final controller = DietController(repo);
+      
+      // Watch the Firestore stream and sync when it updates
+      ref.watch(assignedDietPlanProvider).whenData((firestoreMeals) {
+        controller.syncFromFirestore(firestoreMeals);
+      });
+      
+      return controller;
     });

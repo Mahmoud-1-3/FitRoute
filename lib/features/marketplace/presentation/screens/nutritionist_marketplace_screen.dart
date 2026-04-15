@@ -109,6 +109,8 @@ class _NutritionistMarketplaceScreenState
                   final user = ref.watch(userProvider);
                   final latestReqAsync = ref.watch(userRequestStatusProvider);
                   
+                  debugPrint('[Marketplace] User updated: ${user?.fullName}, assigned: ${user?.assignedNutritionistId}');
+                  
                   if (user != null && user.assignedNutritionistId != null) {
                     return Center(
                       child: Padding(

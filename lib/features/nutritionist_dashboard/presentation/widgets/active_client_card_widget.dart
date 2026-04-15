@@ -199,4 +199,83 @@ class ActiveClientCardWidget extends StatelessWidget {
       ),
     );
   }
+
+  /// Builds client avatar with support for both Base64-encoded and URL-based images
+  Widget _buildAvatarImage() {
+    if (profileImageUrl == null || profileImageUrl!.isEmpty) {
+      // Fallback: Show initials
+      return CircleAvatar(
+        radius: 24,
+        backgroundColor: AppColors.primaryLight,
+        child: Text(
+          name.isNotEmpty ? name[0] : 'C',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
+
+    final bool isBase64 = !profileImageUrl!.startsWith('http');
+
+    if (isBase64) {
+      // Base64-encoded image
+      try {
+        final imageBytes = base64Decode(profileImageUrl!);
+        return ClipOval(
+          child: Image.memory(
+            imageBytes,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+          ),
+        );
+      } catch (e) {
+        // Error decoding, show fallback
+        return CircleAvatar(
+          radius: 24,
+          backgroundColor: AppColors.primaryLight,
+          child: Text(
+            name.isNotEmpty ? name[0] : 'C',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        );
+      }
+    } else {
+      // URL-based image
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: profileImageUrl!,
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.primaryLight,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+            ),
+          ),
+          errorWidget: (context, url, error) => CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.primaryLight,
+            child: Text(
+              name.isNotEmpty ? name[0] : 'C',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
 }
