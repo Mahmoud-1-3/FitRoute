@@ -9,13 +9,15 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import 'weight_entry_model.dart';
+
 part 'user_model.g.dart';
 
 /// ─── User Model ────────────────────────────────────────────────────────────
 /// Represents a FitRoute user (role: 'user' or 'nutritionist').
 
 @HiveType(typeId: 0)
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class UserModel {
   @HiveField(0)
   final String id;
@@ -33,7 +35,11 @@ class UserModel {
   final int age;
 
   @HiveField(5)
-  final double weight;
+  final List<WeightEntry> weightHistory;
+
+  /// Compatibility getter: returns the most recent weight, or 0.0 if empty.
+  double get weight =>
+      weightHistory.isNotEmpty ? weightHistory.last.weight : 0.0;
 
   @HiveField(6)
   final double height;
@@ -59,7 +65,7 @@ class UserModel {
     required this.email,
     required this.fullName,
     required this.age,
-    required this.weight,
+    required this.weightHistory,
     required this.height,
     required this.gender,
     required this.activityLevel,
@@ -80,7 +86,7 @@ class UserModel {
     String? email,
     String? fullName,
     int? age,
-    double? weight,
+    List<WeightEntry>? weightHistory,
     double? height,
     String? gender,
     String? activityLevel,
@@ -94,7 +100,7 @@ class UserModel {
       email: email ?? this.email,
       fullName: fullName ?? this.fullName,
       age: age ?? this.age,
-      weight: weight ?? this.weight,
+      weightHistory: weightHistory ?? this.weightHistory,
       height: height ?? this.height,
       gender: gender ?? this.gender,
       activityLevel: activityLevel ?? this.activityLevel,

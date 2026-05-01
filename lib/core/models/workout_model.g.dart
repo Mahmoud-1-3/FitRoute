@@ -66,8 +66,8 @@ WorkoutModel _$WorkoutModelFromJson(Map<String, dynamic> json) => WorkoutModel(
       id: json['id'] as String,
       name: json['name'] as String,
       targetMuscle: json['targetMuscle'] as String,
-      sets: json['sets'] as int,
-      reps: json['reps'] as int,
+      sets: (json['sets'] as num).toInt(),
+      reps: (json['reps'] as num).toInt(),
       imageUrl: json['imageUrl'] as String,
       instructions: json['instructions'] as String,
     );

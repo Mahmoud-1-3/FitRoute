@@ -85,7 +85,7 @@ NutritionistModel _$NutritionistModelFromJson(Map<String, dynamic> json) =>
           .toList(),
       price: (json['price'] as num).toDouble(),
       rating: (json['rating'] as num).toDouble(),
-      clientCount: json['clientCount'] as int,
+      clientCount: (json['clientCount'] as num).toInt(),
       whatsappNumber: json['whatsappNumber'] as String,
       profileImageUrl: json['profileImageUrl'] as String? ?? '',
       instagramUrl: json['instagramUrl'] as String? ?? '',

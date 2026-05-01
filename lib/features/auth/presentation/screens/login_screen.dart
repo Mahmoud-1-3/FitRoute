@@ -281,40 +281,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 32),
 
-                // ── Divider ──
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: AppColors.divider)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider(color: AppColors.divider)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // ── Social Login placeholder ──
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Google sign in
-                      debugPrint('Google sign in tapped');
-                    },
-                    icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
-                    label: const Text('Continue with Google'),
-                  ),
-                ),
-                const SizedBox(height: 40),
 
                 // ── Footer ──
                 Center(

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/models/nutritionist_model.dart';
 import '../../../../core/models/user_model.dart';
+import '../../../../core/models/weight_entry_model.dart';
 import '../../../../core/models/meal_model.dart';
 import '../../../../core/models/workout_model.dart';
 import '../../../../core/services/firebase_auth_service.dart';
@@ -91,7 +92,9 @@ class AuthController extends StateNotifier<AuthState> {
         email: email,
         fullName: fullName,
         age: age,
-        weight: weight,
+        weightHistory: [
+          WeightEntry(weight: weight, timestamp: DateTime.now()),
+        ],
         height: height,
         gender: gender,
         activityLevel: activityLevel,
@@ -204,7 +207,7 @@ class AuthController extends StateNotifier<AuthState> {
         email: email,
         fullName: fullName,
         age: 0,
-        weight: 0,
+        weightHistory: [],
         height: 0,
         gender: '',
         activityLevel: '',

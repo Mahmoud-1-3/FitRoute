@@ -14,6 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/validation_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/models/user_model.dart';
+import '../../../../core/models/weight_entry_model.dart';
 import '../../../../core/models/meal_model.dart';
 import '../../../../core/models/workout_model.dart';
 import '../../../../core/services/local_storage_service.dart';
@@ -629,10 +630,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                       ) ??
                                       user.height;
 
+                                  List<WeightEntry> newWeightHistory = user.weightHistory;
+                                  if (weight != user.weight) {
+                                    newWeightHistory = List<WeightEntry>.from(user.weightHistory)
+                                      ..add(WeightEntry(weight: weight, timestamp: DateTime.now()));
+                                  }
+
                                   final updatedUser = user.copyWith(
                                     fullName: _fullNameCtrl.text.trim(),
                                     age: age,
-                                    weight: weight,
+                                    weightHistory: newWeightHistory,
                                     height: height,
                                     gender: _gender ?? user.gender,
                                     activityLevel:

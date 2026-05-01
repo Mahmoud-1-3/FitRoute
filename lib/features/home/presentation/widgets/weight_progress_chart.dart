@@ -1,37 +1,25 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../dashboard/presentation/controllers/user_provider.dart';
 
 /// ─── Weight Progress Chart ─────────────────────────────────────────────────
 /// A clean, minimalist line chart showing a recent weight trend.
 
-class WeightProgressChart extends StatelessWidget {
+class WeightProgressChart extends ConsumerWidget {
   const WeightProgressChart({super.key});
 
-  // Dummy data — 7 days of weight readings
-  static const List<double> _weights = [
-    82.5,
-    82.0,
-    81.8,
-    82.1,
-    81.5,
-    81.2,
-    80.8,
-  ];
-  static const List<String> _days = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
+    
+    // Sort history chronologically just in case
+    final history = user?.weightHistory.toList() ?? [];
+    history.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -94,7 +82,7 @@ class WeightProgressChart extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Last 7 days',
+            history.length > 1 ? 'Recent trend' : 'Starting weight',
             style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textHint),
           ),
           const SizedBox(height: 20),
@@ -102,90 +90,131 @@ class WeightProgressChart extends StatelessWidget {
           // ── Chart ──
           SizedBox(
             height: 180,
-            child: LineChart(
-              LineChartData(
-                minY: 79,
-                maxY: 84,
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (_) =>
-                      FlLine(color: AppColors.divider, strokeWidth: 0.8),
-                ),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+            child: history.isEmpty 
+              ? Center(
+                  child: Text(
+                    'No weight data yet.',
+                    style: GoogleFonts.poppins(color: AppColors.textHint),
                   ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 36,
-                      interval: 1,
-                      getTitlesWidget: (value, _) {
-                        if (value % 1 != 0) return const SizedBox.shrink();
-                        return Text(
-                          '${value.toInt()}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            color: AppColors.textHint,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (value, _) {
-                        final i = value.toInt();
-                        if (i < 0 || i >= _days.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            _days[i],
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: AppColors.textHint,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: List.generate(
-                      _weights.length,
-                      (i) => FlSpot(i.toDouble(), _weights[i]),
-                    ),
-                    isCurved: true,
-                    curveSmoothness: 0.3,
-                    color: AppColors.primary,
-                    barWidth: 3,
-                    dotData: FlDotData(
+                )
+              : Builder(
+              builder: (context) {
+                // If only 1 entry, duplicate it so the line chart can draw a horizontal line
+                final List<double> plotWeights = [];
+                final List<String> plotLabels = [];
+                
+                if (history.length == 1) {
+                  plotWeights.add(history.first.weight);
+                  plotWeights.add(history.first.weight);
+                  plotLabels.add('');
+                  plotLabels.add('Start');
+                } else {
+                  for (final entry in history) {
+                    plotWeights.add(entry.weight);
+                    final date = entry.timestamp;
+                    plotLabels.add('${date.day}/${date.month}');
+                  }
+                }
+
+                // Calculate bounds
+                final double maxW = plotWeights.reduce((a, b) => a > b ? a : b);
+                final double minW = plotWeights.reduce((a, b) => a < b ? a : b);
+                
+                final double minY = minW - 2.0;
+                final double maxY = maxW + 2.0;
+                final double range = maxY - minY;
+                
+                double yInterval = 1.0;
+                if (range > 20) {
+                  yInterval = 5.0;
+                } else if (range > 10) {
+                  yInterval = 2.0;
+                }
+
+                return LineChart(
+                  LineChartData(
+                    minY: minY,
+                    maxY: maxY,
+                    gridData: FlGridData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
-                        radius: 4,
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                        strokeColor: AppColors.primary,
+                      drawVerticalLine: false,
+                      horizontalInterval: yInterval,
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: AppColors.divider, strokeWidth: 0.8),
+                    ),
+                    titlesData: FlTitlesData(
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 36,
+                          interval: yInterval,
+                          getTitlesWidget: (value, _) {
+                            if (value % 1 != 0) return const SizedBox.shrink();
+                            return Text(
+                              '${value.toInt()}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: AppColors.textHint,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: 1,
+                          getTitlesWidget: (value, _) {
+                            final i = value.toInt();
+                            if (i < 0 || i >= plotLabels.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                plotLabels[i],
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.primary.withOpacity(0.08),
-                    ),
-                  ),
-                ],
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: List.generate(
+                          plotWeights.length,
+                          (i) => FlSpot(i.toDouble(), plotWeights[i]),
+                        ),
+                        isCurved: true,
+                        curveSmoothness: 0.3,
+                        color: AppColors.primary,
+                        barWidth: 3,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                            radius: 4,
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                            strokeColor: AppColors.primary,
+                          ),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipItems: (spots) => spots
@@ -202,8 +231,10 @@ class WeightProgressChart extends StatelessWidget {
                         .toList(),
                   ),
                 ),
-              ),
-              duration: const Duration(milliseconds: 600),
+                  ),
+                  duration: const Duration(milliseconds: 600),
+                );
+              }
             ),
           ),
         ],

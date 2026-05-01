@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../dashboard/presentation/controllers/diet_controller.dart';
+import '../../../dashboard/presentation/screens/user_main_shell.dart';
 
 /// ─── Quick Action Cards ────────────────────────────────────────────────────
 /// "Next Meal" and "Today's Workout" preview cards for the dashboard.
@@ -54,38 +55,15 @@ class QuickActionCards extends ConsumerWidget {
       nextMealIconColor = const Color(0xFF10B981);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 14) / 2;
-        final scale = (cardWidth / 170).clamp(0.75, 1.0);
-
-        return Row(
-          children: [
-            Expanded(
-              child: _ActionCard(
-                icon: nextMealIcon,
-                iconBg: nextMealIconBg,
-                iconColor: nextMealIconColor,
-                title: nextMealTitle,
-                subtitle: nextMealSubtitle,
-                detail: nextMealDetail,
-                scale: scale,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _ActionCard(
-                icon: Icons.fitness_center_rounded,
-                iconBg: const Color(0xFFEDE9FE),
-                iconColor: const Color(0xFF8B5CF6),
-                title: "Today's Workout",
-                subtitle: 'Upper Body',
-                detail: '45 min  •  6 exercises',
-                scale: scale,
-              ),
-            ),
-          ],
-        );
+    return _ActionCard(
+      icon: nextMealIcon,
+      iconBg: nextMealIconBg,
+      iconColor: nextMealIconColor,
+      title: nextMealTitle,
+      subtitle: nextMealSubtitle,
+      detail: nextMealDetail,
+      onTap: () {
+        ref.read(mainShellTabProvider.notifier).state = 1; // 1 is the Diet tab index
       },
     );
   }
@@ -116,7 +94,7 @@ class _ActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.detail,
-    required this.scale,
+    this.onTap,
   });
 
   final IconData icon;
@@ -125,17 +103,16 @@ class _ActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String detail;
-  final double scale;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final pad = (16 * scale).clamp(10.0, 16.0);
-    final iconSize = (40 * scale).clamp(28.0, 40.0);
-    final iconRadius = (12 * scale).clamp(8.0, 12.0);
-    final iconInner = (20 * scale).clamp(14.0, 20.0);
-
-    return Container(
-      padding: EdgeInsets.all(pad),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+      child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
@@ -147,56 +124,69 @@ class _ActionCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
+          // Icon
           Container(
-            width: iconSize,
-            height: iconSize,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(iconRadius),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: iconColor, size: iconInner),
+            child: Icon(icon, color: iconColor, size: 26),
           ),
-          SizedBox(height: 10 * scale),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: (11 * scale).clamp(9.0, 11.0),
-              fontWeight: FontWeight.w500,
-              color: AppColors.textHint,
+          const SizedBox(width: 16),
+          // Text info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textHint,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              subtitle,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
+          // Arrow
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
             ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              detail,
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
-              maxLines: 1,
+            child: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: iconColor,
             ),
           ),
         ],
       ),
+    ),
     );
   }
 }

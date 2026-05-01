@@ -13,6 +13,9 @@ import '../../../profile/presentation/screens/user_profile_screen.dart';
 import '../../../workout/presentation/screens/workout_plan_screen.dart';
 import '../controllers/user_assignment_stream_provider.dart';
 
+/// Provider to control the selected tab index from anywhere in the user shell
+final mainShellTabProvider = StateProvider<int>((ref) => 0);
+
 /// ─── User Main Shell ───────────────────────────────────────────────────────
 /// Persistent bottom navigation bar with 5 tabs.
 /// Also listens to real-time assignment stream for auto-updates.
@@ -25,7 +28,6 @@ class UserMainShell extends ConsumerStatefulWidget {
 }
 
 class _UserMainShellState extends ConsumerState<UserMainShell> {
-  int _selectedIndex = 0;
   DateTime? _lastBackPress;
 
   static const List<_TabItem> _tabs = [
@@ -41,6 +43,11 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
   @override
   void initState() {
     super.initState();
+    // Re-initialize the tab provider to 0 on startup just in case
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(mainShellTabProvider.notifier).state = 0;
+    });
+
     _pages = const [
       UserHomeScreen(),
       DietPlanScreen(),
@@ -66,9 +73,10 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
 
+        final currentIndex = ref.read(mainShellTabProvider);
         // If not on Home tab → jump back to Home
-        if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
+        if (currentIndex != 0) {
+          ref.read(mainShellTabProvider.notifier).state = 0;
           return;
         }
 
@@ -98,7 +106,7 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
         }
       },
       child: Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(index: ref.watch(mainShellTabProvider), children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -116,12 +124,13 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(_tabs.length, (i) {
-                final isSelected = i == _selectedIndex;
+                final currentIndex = ref.watch(mainShellTabProvider);
+                final isSelected = i == currentIndex;
                 return _NavItem(
                   icon: _tabs[i].icon,
                   label: _tabs[i].label,
                   isSelected: isSelected,
-                  onTap: () => setState(() => _selectedIndex = i),
+                  onTap: () => ref.read(mainShellTabProvider.notifier).state = i,
                 );
               }),
             ),

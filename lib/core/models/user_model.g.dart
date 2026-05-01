@@ -22,7 +22,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       email: fields[2] as String,
       fullName: fields[3] as String,
       age: fields[4] as int,
-      weight: fields[5] as double,
+      weightHistory: (fields[5] as List).cast<WeightEntry>(),
       height: fields[6] as double,
       gender: fields[7] as String,
       activityLevel: fields[8] as String,
@@ -47,7 +47,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(4)
       ..write(obj.age)
       ..writeByte(5)
-      ..write(obj.weight)
+      ..write(obj.weightHistory)
       ..writeByte(6)
       ..write(obj.height)
       ..writeByte(7)
@@ -82,8 +82,10 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       role: json['role'] as String,
       email: json['email'] as String,
       fullName: json['fullName'] as String,
-      age: json['age'] as int,
-      weight: (json['weight'] as num).toDouble(),
+      age: (json['age'] as num).toInt(),
+      weightHistory: (json['weightHistory'] as List<dynamic>)
+          .map((e) => WeightEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
       height: (json['height'] as num).toDouble(),
       gender: json['gender'] as String,
       activityLevel: json['activityLevel'] as String,
@@ -98,7 +100,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'email': instance.email,
       'fullName': instance.fullName,
       'age': instance.age,
-      'weight': instance.weight,
+      'weightHistory': instance.weightHistory.map((e) => e.toJson()).toList(),
       'height': instance.height,
       'gender': instance.gender,
       'activityLevel': instance.activityLevel,
