@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +28,8 @@ class _NutritionistSignupScreenState
   final _bioCtrl = TextEditingController();
   final _specialtiesCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+  final _whatsappCtrl = TextEditingController();
+  final _instagramCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -36,6 +39,8 @@ class _NutritionistSignupScreenState
     _bioCtrl.dispose();
     _specialtiesCtrl.dispose();
     _priceCtrl.dispose();
+    _whatsappCtrl.dispose();
+    _instagramCtrl.dispose();
     super.dispose();
   }
 
@@ -57,6 +62,8 @@ class _NutritionistSignupScreenState
           bio: _bioCtrl.text.trim(),
           specialties: specialties,
           price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
+          whatsappNumber: _whatsappCtrl.text.trim(),
+          instagramUrl: _instagramCtrl.text.trim(),
         );
   }
 
@@ -78,7 +85,13 @@ class _NutritionistSignupScreenState
       }
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/role-selection');
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
@@ -111,44 +124,7 @@ class _NutritionistSignupScreenState
                 ),
                 const SizedBox(height: 28),
 
-                // ── Avatar ──
-                Center(
-                  child: GestureDetector(
-                    onTap: () => debugPrint('Open image picker'),
-                    child: Stack(
-                      children: [
-                        const CircleAvatar(
-                          radius: 50,
-                          backgroundColor: AppColors.primaryLight,
-                          child: Icon(
-                            Icons.person_rounded,
-                            size: 48,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
+
 
                 // ── Error Banner ──
                 if (authState.errorMessage != null)
@@ -288,6 +264,32 @@ class _NutritionistSignupScreenState
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
+                const SizedBox(height: 28),
+
+                // ── Contact Links ──
+                _sectionTitle('Contact Links'),
+                const SizedBox(height: 12),
+
+                CustomTextField(
+                  label: 'WhatsApp Number',
+                  hintText: 'e.g. +201012345678',
+                  controller: _whatsappCtrl,
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'This field is required' : null,
+                ),
+                const SizedBox(height: 16),
+
+                CustomTextField(
+                  label: 'Instagram Link',
+                  hintText: 'https://instagram.com/yourhandle',
+                  controller: _instagramCtrl,
+                  keyboardType: TextInputType.url,
+                  prefixIcon: const Icon(Icons.link_rounded, size: 20),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'This field is required' : null,
+                ),
                 const SizedBox(height: 36),
 
                 // ── Submit Button ──
@@ -339,6 +341,7 @@ class _NutritionistSignupScreenState
             ),
           ),
         ),
+      ),
       ),
     );
   }

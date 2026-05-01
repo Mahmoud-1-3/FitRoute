@@ -134,26 +134,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
 
-              // ── Bottom initialising bar ──
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
-                  vertical: 32,
-                ),
-                child: Column(
-                  children: [
-                    _InitProgressBar(controller: _controller),
-                    const SizedBox(height: 16),
-                    Text(
-                      'v1.0.0 (Stable)',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -162,69 +142,3 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// A thin animated progress bar that fills over ~2 seconds.
-class _InitProgressBar extends StatefulWidget {
-  const _InitProgressBar({required this.controller});
-  final AnimationController controller;
-
-  @override
-  State<_InitProgressBar> createState() => _InitProgressBarState();
-}
-
-class _InitProgressBarState extends State<_InitProgressBar> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onTick);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onTick);
-    super.dispose();
-  }
-
-  void _onTick() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'INITIALIZING',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.6),
-                letterSpacing: 1.5,
-              ),
-            ),
-            Text(
-              '${(widget.controller.value * 100).toInt()}%',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: widget.controller.value,
-            minHeight: 4,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        ),
-      ],
-    );
-  }
-}

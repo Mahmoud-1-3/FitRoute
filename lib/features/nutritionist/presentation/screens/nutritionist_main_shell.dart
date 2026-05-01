@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -18,6 +21,7 @@ class NutritionistMainShell extends StatefulWidget {
 
 class _NutritionistMainShellState extends State<NutritionistMainShell> {
   int _selectedIndex = 0;
+  DateTime? _lastBackPress;
 
   static const List<_TabItem> _tabs = [
     _TabItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
@@ -39,7 +43,42 @@ class _NutritionistMainShellState extends State<NutritionistMainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+
+        // If not on Dashboard tab → jump back to Dashboard
+        if (_selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+          return;
+        }
+
+        // Already on Dashboard → double-tap-to-exit logic
+        final now = DateTime.now();
+        final isSecondTap = _lastBackPress != null &&
+            now.difference(_lastBackPress!) < const Duration(seconds: 2);
+
+        if (isSecondTap) {
+          SystemNavigator.pop();
+        } else {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Press back again to exit',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -69,6 +108,7 @@ class _NutritionistMainShellState extends State<NutritionistMainShell> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

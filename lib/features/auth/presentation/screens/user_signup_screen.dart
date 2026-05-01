@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -103,7 +104,13 @@ class _UserSignupScreenState extends ConsumerState<UserSignupScreen> {
       }
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/role-selection');
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
@@ -428,6 +435,7 @@ class _UserSignupScreenState extends ConsumerState<UserSignupScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

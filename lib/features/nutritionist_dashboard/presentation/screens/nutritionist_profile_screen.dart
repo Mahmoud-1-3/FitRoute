@@ -106,9 +106,7 @@ class _NutritionistProfileScreenState
         // to prevent overwriting during typing.
         if (!_hasChanges) {
           if (_bioCtrl.text != nutritionist.bio) {
-             _bioCtrl.text = nutritionist.bio.isEmpty 
-                 ? 'Registered Dietitian with 10 years of experience helping clients achieve sustainable fat loss and performance goals. Specialty: personalized plans.'
-                 : nutritionist.bio;
+            _bioCtrl.text = nutritionist.bio;
           }
           if (_priceCtrl.text != nutritionist.price.toString() && nutritionist.price > 0) {
             _priceCtrl.text = nutritionist.price.toString();
@@ -120,9 +118,7 @@ class _NutritionistProfileScreenState
             _instagramCtrl.text = nutritionist.instagramUrl;
           }
           if (_specialties.isEmpty) {
-            _specialties = nutritionist.specialties.isEmpty
-                ? ['Fat Loss', 'Sports Nutrition']
-                : List.from(nutritionist.specialties);
+            _specialties = List.from(nutritionist.specialties);
           }
         }
 
@@ -310,9 +306,9 @@ class _NutritionistProfileScreenState
                       child: Row(
                         children: [
                           Text(
-                            '\$',
+                            'EGP',
                             style: GoogleFonts.poppins(
-                              fontSize: 20,
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primary,
                             ),

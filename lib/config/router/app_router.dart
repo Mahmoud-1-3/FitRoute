@@ -108,10 +108,13 @@ final GoRouter appRouter = GoRouter(
           nutritionistId: data['id'] as String? ?? '',
           name: data['name'] as String? ?? 'Nutritionist',
           specialty: data['specialty'] as String? ?? 'General',
+          specialties: (data['specialties'] as List<dynamic>?)?.cast<String>() ?? [],
           rating: data['rating'] as double? ?? 4.5,
           clients: data['clients'] as int? ?? 0,
           price: data['price'] as int? ?? 50,
           bio: data['bio'] as String? ?? '',
+          whatsappNumber: data['whatsappNumber'] as String? ?? '',
+          instagramUrl: data['instagramUrl'] as String? ?? '',
           profileImageUrl: data['profileImageUrl'] as String?,
         );
       },

@@ -171,6 +171,8 @@ class AuthController extends StateNotifier<AuthState> {
     required String bio,
     required List<String> specialties,
     required double price,
+    required String whatsappNumber,
+    required String instagramUrl,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -190,9 +192,9 @@ class AuthController extends StateNotifier<AuthState> {
         price: price,
         rating: 0.0,
         clientCount: 0,
-        whatsappNumber: '',
+        whatsappNumber: whatsappNumber,
         profileImageUrl: '',
-        instagramUrl: '',
+        instagramUrl: instagramUrl,
       );
 
       // Also save a UserModel so the app knows the current role.
@@ -282,34 +284,33 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = state.copyWith(isLoading: false, isAuthenticated: true);
     } on FirebaseAuthException catch (e) {
-      // Specific Firebase auth error
       debugPrint('[AuthController] ❌ Firebase Auth Error: ${e.code} - ${e.message}');
-      
-      String errorMsg;
-      if (e.code == 'user-not-found') {
-        errorMsg = 'Email not found. Please check or sign up.';
-      } else if (e.code == 'wrong-password') {
-        errorMsg = 'Wrong password. Please try again.';
-      } else if (e.code == 'network-request-failed') {
-        errorMsg = 'Network error. Please check your internet connection.';
-      } else {
-        errorMsg = e.message ?? 'Login failed. Please try again.';
+      final String errorMsg;
+      switch (e.code) {
+        case 'invalid-credential':
+        case 'user-not-found':
+        case 'wrong-password':
+          errorMsg = 'The email or password you entered is incorrect.';
+          break;
+        case 'invalid-email':
+          errorMsg = 'Please enter a valid email address.';
+          break;
+        case 'network-request-failed':
+          errorMsg = 'No internet connection. Please check your network and try again.';
+          break;
+        case 'too-many-requests':
+          errorMsg = 'Too many failed attempts. Please try again later.';
+          break;
+        default:
+          errorMsg = 'An unexpected error occurred. Please try again.';
       }
-      
       state = state.copyWith(isLoading: false, errorMessage: errorMsg);
     } catch (e) {
-      // Network or other errors
       debugPrint('[AuthController] ❌ Login error: $e');
-      
-      final msg = e.toString().toLowerCase();
-      String errorMsg = 'Network error. Please check your internet connection.';
-      
-      if (!msg.contains('network') && !msg.contains('connection') && 
-          !msg.contains('socket') && !msg.contains('timeout')) {
-        errorMsg = 'Login failed. Please try again.';
-      }
-      
-      state = state.copyWith(isLoading: false, errorMessage: errorMsg);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'An unexpected error occurred. Please try again.',
+      );
     }
   }
 

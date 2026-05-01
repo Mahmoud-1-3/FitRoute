@@ -292,6 +292,7 @@ class _NutritionistMarketplaceScreenState
                                         'price': n.price.toInt(),
                                         'bio': n.bio,
                                         'whatsappNumber': n.whatsappNumber,
+                                        'instagramUrl': n.instagramUrl,
                                         'email': n.email,
                                         'profileImageUrl': n.profileImageUrl,
                                       },

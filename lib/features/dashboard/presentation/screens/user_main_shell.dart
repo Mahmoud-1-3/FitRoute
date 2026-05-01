@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,6 +26,7 @@ class UserMainShell extends ConsumerStatefulWidget {
 
 class _UserMainShellState extends ConsumerState<UserMainShell> {
   int _selectedIndex = 0;
+  DateTime? _lastBackPress;
 
   static const List<_TabItem> _tabs = [
     _TabItem(icon: Icons.home_rounded, label: 'Home'),
@@ -55,8 +59,45 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
   Widget build(BuildContext context) {
     // Watch the assignment stream to keep it active
     ref.watch(userAssignmentStreamProvider);
-    
-    return Scaffold(
+
+    return PopScope(
+      // Only allow native pop when already on Home tab
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+
+        // If not on Home tab → jump back to Home
+        if (_selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+          return;
+        }
+
+        // Already on Home → double-tap-to-exit logic
+        final now = DateTime.now();
+        final isSecondTap = _lastBackPress != null &&
+            now.difference(_lastBackPress!) < const Duration(seconds: 2);
+
+        if (isSecondTap) {
+          // Exit the app
+          SystemNavigator.pop();
+        } else {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Press back again to exit',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -86,6 +127,7 @@ class _UserMainShellState extends ConsumerState<UserMainShell> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

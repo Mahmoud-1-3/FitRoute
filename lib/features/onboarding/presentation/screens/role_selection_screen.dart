@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,12 +10,45 @@ import '../../../../core/theme/app_theme.dart';
 /// Two role cards: Continue as User · Continue as Nutritionist
 /// Footer: "Already have an account? Log in"
 
-class RoleSelectionScreen extends StatelessWidget {
+class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
 
   @override
+  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
+}
+
+class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
+  DateTime? _lastBackPress;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        final isSecondTap = _lastBackPress != null &&
+            now.difference(_lastBackPress!) < const Duration(seconds: 2);
+        if (isSecondTap) {
+          SystemNavigator.pop();
+        } else {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Press back again to exit',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
@@ -108,6 +142,7 @@ class RoleSelectionScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
