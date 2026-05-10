@@ -553,7 +553,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                   .read(authControllerProvider.notifier)
                                   .logout();
                               if (context.mounted) {
-                                context.go('/role-selection');
+                                context.go('/login');
                               }
                             },
                             icon: const Icon(Icons.logout_rounded, size: 18),

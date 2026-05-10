@@ -56,27 +56,6 @@ class NutritionistDashboardScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    // Notification bell
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.shadow,
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none_rounded,
-                        color: AppColors.textPrimary,
-                        size: 24,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -90,7 +69,8 @@ class NutritionistDashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.people_rounded,
-                        value: '${ref.watch(activeClientsProvider).valueOrNull?.length ?? 0}',
+                        value:
+                            '${ref.watch(activeClientsProvider).valueOrNull?.length ?? 0}',
                         label: 'Active Clients',
                         color: AppColors.primary,
                       ),
@@ -99,7 +79,8 @@ class NutritionistDashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.pending_actions_rounded,
-                        value: '${ref.watch(pendingRequestsProvider).valueOrNull?.length ?? 0}',
+                        value:
+                            '${ref.watch(pendingRequestsProvider).valueOrNull?.length ?? 0}',
                         label: 'Pending',
                         color: const Color(0xFFF59E0B),
                       ),
@@ -108,7 +89,8 @@ class NutritionistDashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: _QuickStat(
                         icon: Icons.star_rounded,
-                        value: '${ref.watch(nutritionistRepositoryProvider).getNutritionist()?.rating.toStringAsFixed(1) ?? '0.0'}',
+                        value:
+                            '${ref.watch(nutritionistRepositoryProvider).getNutritionist()?.rating.toStringAsFixed(1) ?? '0.0'}',
                         label: 'Rating',
                         color: const Color(0xFF6366F1),
                       ),

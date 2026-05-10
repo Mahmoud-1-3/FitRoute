@@ -38,48 +38,70 @@ class WeightProgressChart extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Title row ──
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Weight Tracking',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+          Builder(builder: (context) {
+            // Calculate dynamic trend
+            String trendText = '';
+            IconData trendIcon = Icons.trending_flat_rounded;
+            Color trendColor = AppColors.textHint;
+            Color trendBg = const Color(0xFFF3F4F6);
+
+            if (history.length >= 2) {
+              final diff = history.last.weight - history.first.weight;
+              if (diff < 0) {
+                trendText = '${diff.toStringAsFixed(1)} kg';
+                trendIcon = Icons.trending_down_rounded;
+                trendColor = AppColors.primary;
+                trendBg = AppColors.primaryLight;
+              } else if (diff > 0) {
+                trendText = '+${diff.toStringAsFixed(1)} kg';
+                trendIcon = Icons.trending_up_rounded;
+                trendColor = const Color(0xFFEF4444);
+                trendBg = const Color(0xFFFEE2E2);
+              } else {
+                trendText = '0 kg';
+              }
+            }
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Weight Tracking',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.trending_down_rounded,
-                      size: 14,
-                      color: AppColors.primary,
+                if (history.length >= 2)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '-1.7 kg',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
+                    decoration: BoxDecoration(
+                      color: trendBg,
+                      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(trendIcon, size: 14, color: trendColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          trendText,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: trendColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          }),
           const SizedBox(height: 4),
           Text(
             history.length > 1 ? 'Recent trend' : 'Starting weight',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -61,8 +62,7 @@ class ClientsTabView extends ConsumerWidget {
               goal: c.goal,
               weeksActive: 1, // Dummy weeks active since there's no createdAt
               onViewProgress: () {
-                // Navigate to progress view
-                debugPrint('View Progress for ${c.fullName}');
+                context.push('/client-progress', extra: c);
               },
               onMessage: () async {
                 final url = Uri.parse('whatsapp://send?phone=0000000000');

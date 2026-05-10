@@ -235,26 +235,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 8),
-
-                // ── Forgot Password ──
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: Forgot password flow
-                      debugPrint('Forgot password tapped');
-                    },
-                    child: Text(
-                      'Forgot Password?',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
 
                 // ── Login Button ──
