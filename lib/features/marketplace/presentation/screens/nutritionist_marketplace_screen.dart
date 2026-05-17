@@ -274,12 +274,6 @@ class _NutritionistMarketplaceScreenState
                                   pricePerMonth: n.price.toInt(),
                                   profileImageUrl: n.profileImageUrl,
                                   onViewProfile: () {
-                                    if (isPending) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('You cannot send a new request while one is pending')),
-                                      );
-                                      return;
-                                    }
                                     context.push(
                                       '/nutritionist-profile',
                                       extra: {

@@ -69,6 +69,31 @@ class AssignmentRepository {
         .doc(requestId)
         .delete();
   }
+
+  /// Streams the pending request (if any) from [userId] to [nutritionistId].
+  Stream<AssignmentRequestModel?> streamPendingRequestForNutritionist(
+      String userId, String nutritionistId) {
+    return _firestore
+        .collection('assignment_requests')
+        .where('userId', isEqualTo: userId)
+        .where('nutritionistId', isEqualTo: nutritionistId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return null;
+      final data = snapshot.docs.first.data();
+      data['id'] = snapshot.docs.first.id;
+      return AssignmentRequestModel.fromJson(data);
+    });
+  }
+
+  /// Deletes a request document entirely.
+  Future<void> cancelRequest(String requestId) async {
+    await _firestore
+        .collection('assignment_requests')
+        .doc(requestId)
+        .delete();
+  }
 }
 
 final assignmentRepositoryProvider = Provider<AssignmentRepository>((ref) {

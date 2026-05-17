@@ -14,6 +14,8 @@ import '../../../../core/models/assignment_request_model.dart';
 import '../../../dashboard/presentation/controllers/user_provider.dart';
 import '../../../shared/data/user_repository.dart';
 import '../../data/assignment_repository.dart';
+import '../controllers/pending_request_provider.dart';
+import '../controllers/marketplace_providers.dart';
 
 /// ─── Nutritionist Detail Screen ────────────────────────────────────────────
 
@@ -167,6 +169,11 @@ class _NutritionistDetailScreenState
         user?.assignedNutritionistId == widget.nutritionistId;
     final isAssignedToOther = user?.assignedNutritionistId != null &&
         user?.assignedNutritionistId != widget.nutritionistId;
+
+    // Watch for pending request from this user to this nutritionist
+    final pendingAsync = user != null
+        ? ref.watch(pendingRequestProvider('${user.id}_${widget.nutritionistId}'))
+        : const AsyncValue<AssignmentRequestModel?>.data(null);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -457,70 +464,132 @@ class _NutritionistDetailScreenState
             ),
           ),
 
-          // ── Fixed bottom action bar ──
-          if (!isAssignedToThis && !isAssignedToOther)
-            _BottomBar(
-              isLoading: _isLoading,
-              price: widget.price,
-              onSend: () async {
-                final user =
-                    ref.read(userRepositoryProvider).getUser();
-                if (user == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Error: Not logged in.'),
-                      backgroundColor: AppColors.error,
-                    ),
+          // ── Fixed bottom action bar (4 states) ──
+          if (isAssignedToThis)
+            _ActiveNutritionistBar(name: widget.name)
+          else if (!isAssignedToOther)
+            pendingAsync.when(
+              data: (pendingRequest) {
+                if (pendingRequest != null) {
+                  // ── State 2: Pending to THIS nutritionist → Cancel button ──
+                  return _CancelRequestBar(
+                    isLoading: _isLoading,
+                    onCancel: () => _cancelRequest(pendingRequest.id),
                   );
-                  return;
                 }
-                setState(() => _isLoading = true);
-                try {
-                  final requestRepo =
-                      ref.read(assignmentRepositoryProvider);
-                  final reqId = FirebaseFirestore.instance
-                      .collection('assignment_requests')
-                      .doc()
-                      .id;
-                  final newRequest = AssignmentRequestModel(
-                    id: reqId,
-                    userId: user.id,
-                    nutritionistId: widget.nutritionistId,
-                    status: 'pending',
-                    createdAt: DateTime.now(),
-                  );
-                  await requestRepo.createRequest(newRequest);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text('Request sent to ${widget.name}!'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                    context.pop();
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to send request: $e'),
-                        backgroundColor: AppColors.error,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                } finally {
-                  if (mounted) setState(() => _isLoading = false);
+
+                // No pending to THIS nutritionist — but check if there's
+                // a pending request to ANY other nutritionist.
+                final globalRequest = ref.watch(userRequestStatusProvider).valueOrNull;
+                final hasPendingElsewhere = globalRequest?.status == 'pending';
+
+                if (hasPendingElsewhere) {
+                  // ── State 3: Pending to ANOTHER nutritionist → disabled ──
+                  return _PendingElsewhereBar();
                 }
+
+                // ── State 1: No pending request anywhere → Send button ──
+                return _BottomBar(
+                  isLoading: _isLoading,
+                  price: widget.price,
+                  onSend: _sendRequest,
+                );
               },
-            )
-          else if (isAssignedToThis)
-            _ActiveNutritionistBar(name: widget.name),
+              loading: () => _BottomBar(
+                isLoading: true,
+                price: widget.price,
+                onSend: () {},
+              ),
+              error: (_, __) => _BottomBar(
+                isLoading: false,
+                price: widget.price,
+                onSend: _sendRequest,
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  // ── Send Request action ─────────────────────────────────────────────────
+  Future<void> _sendRequest() async {
+    final user = ref.read(userRepositoryProvider).getUser();
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Not logged in.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final requestRepo = ref.read(assignmentRepositoryProvider);
+      final reqId = FirebaseFirestore.instance
+          .collection('assignment_requests')
+          .doc()
+          .id;
+      final newRequest = AssignmentRequestModel(
+        id: reqId,
+        userId: user.id,
+        nutritionistId: widget.nutritionistId,
+        status: 'pending',
+        createdAt: DateTime.now(),
+      );
+      await requestRepo.createRequest(newRequest);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Request sent to ${widget.name}!'),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send request: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ── Cancel Request action ───────────────────────────────────────────────
+  Future<void> _cancelRequest(String requestId) async {
+    setState(() => _isLoading = true);
+    try {
+      final requestRepo = ref.read(assignmentRepositoryProvider);
+      await requestRepo.cancelRequest(requestId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Request cancelled.'),
+            backgroundColor: AppColors.textSecondary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Widget _chip(String label) => Container(
@@ -592,6 +661,115 @@ class _BottomBar extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ── Cancel Request bar (red outline, destructive action) ──
+class _CancelRequestBar extends StatelessWidget {
+  const _CancelRequestBar({
+    required this.isLoading,
+    required this.onCancel,
+  });
+  final bool isLoading;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: isLoading ? null : onCancel,
+            icon: isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.error,
+                    ),
+                  )
+                : const Icon(Icons.close_rounded, size: 20),
+            label: Text(
+              isLoading ? 'Cancelling...' : 'Cancel Request',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ── Pending Elsewhere bar (disabled, informative) ──
+class _PendingElsewhereBar extends StatelessWidget {
+  const _PendingElsewhereBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: null,
+            icon: const Icon(Icons.hourglass_empty_rounded, size: 20),
+            label: Text(
+              'Pending Request Elsewhere',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.textHint,
+              disabledForegroundColor: AppColors.textHint,
+              side: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3), width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              ),
+            ),
           ),
         ),
       ),
