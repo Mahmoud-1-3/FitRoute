@@ -39,6 +39,13 @@ class DietPlanScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/add-meal'),
+        icon: const Icon(Icons.camera_alt_rounded),
+        label: const Text('Scan Meal'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+      ),
       body: SafeArea(
         child: meals.isEmpty
             // ── Empty state ──

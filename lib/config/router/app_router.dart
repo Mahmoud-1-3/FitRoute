@@ -17,6 +17,7 @@ import '../../features/onboarding/presentation/screens/role_selection_screen.dar
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/workout/presentation/screens/exercise_detail_screen.dart';
 import '../../features/diet/presentation/screens/meal_detail_screen.dart';
+import '../../features/nutrition/presentation/screens/add_meal_screen.dart';
 import '../../features/shared/data/user_repository.dart';
 
 /// ─── Public / Auth-free routes ─────────────────────────────────────────────
@@ -35,6 +36,7 @@ const _userOnlyPaths = <String>{
   '/home',
   '/exercise-detail',
   '/meal-detail',
+  '/add-meal',
   '/marketplace',
   '/nutritionist-profile',
 };
@@ -180,6 +182,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             isSelected: data['isSelected'] as bool? ?? false,
           );
         },
+      ),
+
+      // ── Add Meal (Rate My Plate) ──
+      GoRoute(
+        path: '/add-meal',
+        name: 'add-meal',
+        builder: (context, state) => const AddMealScreen(),
       ),
 
       // ── Marketplace ──
