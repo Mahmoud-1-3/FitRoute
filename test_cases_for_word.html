@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  margin-bottom: 30px;
+}
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+th {
+  background-color: #f2f2f2;
+}
+.test-table th { width: 25%; }
+</style>
+</head>
+<body>
+
+<h2>5.2 Test Cases</h2>
+
+<table class="test-table">
+  <tr><th>Field</th><th>Description</th></tr>
+  <tr><td><b>Test ID</b></td><td>TC-01</td></tr>
+  <tr><td><b>Objective</b></td><td>Verify that a user can successfully register and log into the system.</td></tr>
+  <tr><td><b>Pre-conditions</b></td><td>The user has the app installed and an active internet connection.</td></tr>
+  <tr><td><b>Test Steps</b></td><td>1. Open FitRoute Application.<br>2. Select "User" on Role Selection.<br>3. Fill out registration form with valid email and password.<br>4. Tap "Register".</td></tr>
+  <tr><td><b>Expected Result</b></td><td>Firebase successfully creates the account, Cloud Firestore saves the user data document, and the app automatically redirects to the User Home Dashboard.</td></tr>
+  <tr><td><b>Actual Result</b></td><td>As expected. User successfully routed to Dashboard.</td></tr>
+  <tr><td><b>Status</b></td><td><b>Pass</b></td></tr>
+</table>
+
+<table class="test-table">
+  <tr><th>Field</th><th>Description</th></tr>
+  <tr><td><b>Test ID</b></td><td>TC-02</td></tr>
+  <tr><td><b>Objective</b></td><td>Verify that a user can send a request to a nutritionist and the nutritionist receives it in real-time.</td></tr>
+  <tr><td><b>Pre-conditions</b></td><td>Both User and Nutritionist are logged into the system on separate devices.</td></tr>
+  <tr><td><b>Test Steps</b></td><td>1. User navigates to the Marketplace tab.<br>2. User selects a Nutritionist profile and taps "Send Request".<br>3. Nutritionist opens the "Requests" tab on their dashboard.</td></tr>
+  <tr><td><b>Expected Result</b></td><td>The User's UI changes to "Pending". The Nutritionist's UI instantly displays the incoming request card via the Firestore real-time stream.</td></tr>
+  <tr><td><b>Actual Result</b></td><td>As expected. The real-time stream updated the UI in less than 1 second.</td></tr>
+  <tr><td><b>Status</b></td><td><b>Pass</b></td></tr>
+</table>
+
+<table class="test-table">
+  <tr><th>Field</th><th>Description</th></tr>
+  <tr><td><b>Test ID</b></td><td>TC-03</td></tr>
+  <tr><td><b>Objective</b></td><td>Verify the Gemini Vision API correctly processes an image and returns formatted macronutrient estimates.</td></tr>
+  <tr><td><b>Pre-conditions</b></td><td>App possesses Camera permissions and a valid Google AI API key is configured.</td></tr>
+  <tr><td><b>Test Steps</b></td><td>1. User taps the Add Meal (Camera Icon) button.<br>2. User captures an image of their food using the device camera.<br>3. The application compresses the image and transmits it to the Gemini API.</td></tr>
+  <tr><td><b>Expected Result</b></td><td>The app displays a loading indicator, then successfully renders four macro cards (Calories, Carbs, Protein, Fat) and a meal breakdown list parsed from the JSON response.</td></tr>
+  <tr><td><b>Actual Result</b></td><td>As expected. All JSON data was correctly mapped to the UI models.</td></tr>
+  <tr><td><b>Status</b></td><td><b>Pass</b></td></tr>
+</table>
+
+<h2>5.4 Bug Report</h2>
+
+<table>
+  <tr>
+    <th>Bug ID</th>
+    <th>Module</th>
+    <th>Issue Description</th>
+    <th>Root Cause</th>
+    <th>Resolution</th>
+    <th>Status</th>
+  </tr>
+  <tr>
+    <td><b>BUG-001</b></td>
+    <td>Routing</td>
+    <td>App gets stuck in an infinite redirect loop on startup.</td>
+    <td>GoRouter was trying to check the user's role before the Hive local database had fully initialized.</td>
+    <td>Modified main.dart to await Hive.initFlutter() before attaching the router to the UI.</td>
+    <td><b>Resolved</b></td>
+  </tr>
+  <tr>
+    <td><b>BUG-002</b></td>
+    <td>AI Scanner</td>
+    <td>"Rate My Plate" randomly crashes and shows a red error screen.</td>
+    <td>Gemini API occasionally returned the JSON wrapped in Markdown formatting, crashing the Dart JSON parser.</td>
+    <td>Updated the GenerationConfig to explicitly enforce responseMimeType: 'application/json'.</td>
+    <td><b>Resolved</b></td>
+  </tr>
+  <tr>
+    <td><b>BUG-003</b></td>
+    <td>Performance</td>
+    <td>Capturing a photo for the AI scanner takes 10+ seconds to process.</td>
+    <td>High-resolution modern smartphone cameras were creating 10MB+ files, causing slow API uploads.</td>
+    <td>Implemented imageQuality: 50 and maxWidth: 800 in the image_picker to compress files under 1MB.</td>
+    <td><b>Resolved</b></td>
+  </tr>
+</table>
+
+</body>
+</html>

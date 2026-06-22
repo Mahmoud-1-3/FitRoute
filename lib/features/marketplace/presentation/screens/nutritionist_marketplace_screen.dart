@@ -90,10 +90,6 @@ class _NutritionistMarketplaceScreenState
                       color: AppColors.textHint,
                     ),
                     prefixIcon: const Icon(Icons.search_rounded, size: 22),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.tune_rounded, size: 20),
-                      onPressed: () => debugPrint('Open filters'),
-                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),

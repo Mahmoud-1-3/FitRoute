@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  margin-bottom: 40px;
+}
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background-color: #f2f2f2;
+}
+</style>
+</head>
+<body>
+
+<h2>1. Authentication & Role Selection Flow</h2>
+<table>
+  <tr>
+    <th>Test Case ID</th>
+    <th>Test Steps</th>
+    <th>Input Data</th>
+    <th>Expected Results</th>
+    <th>Actual Results</th>
+    <th>Execution Status</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td><b>TC001</b></td>
+    <td>1. Launch App.<br>2. On Role Selection, tap "User".<br>3. Fill out the User Signup form.<br>4. Tap "Register".</td>
+    <td>testuser@fitroute.com, Pass123!, "John Doe"</td>
+    <td>Firebase Auth creates the credential. Firestore writes the UserModel document with role: 'user'. GoRouter detects the auth change and securely redirects the user to /home.</td>
+    <td>As expected, user successfully redirected to User Dashboard.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC002</b></td>
+    <td>1. Launch App.<br>2. On Role Selection, tap "Nutritionist".<br>3. Fill out the Nutritionist Signup form.<br>4. Tap "Register".</td>
+    <td>testpro@fitroute.com, Pass123!, "Dr. Smith"</td>
+    <td>Firebase Auth creates the credential. Firestore writes the NutritionistModel document with role: 'nutritionist'. GoRouter detects the auth change and securely redirects to /nutritionist-dashboard.</td>
+    <td>As expected, nutritionist successfully redirected to Pro Dashboard.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC003</b></td>
+    <td>1. Open the app while an active Firebase Auth session exists.<br>2. Observe the routing logic.</td>
+    <td>Valid local Firebase Auth Token</td>
+    <td>The app bypasses the Splash and Login screens. GoRouter reads the local Hive role and automatically routes to the appropriate dashboard based on the existing session.</td>
+    <td>As expected, auto-login triggered successfully.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+</table>
+
+<h2>2. Marketplace Matchmaking</h2>
+<table>
+  <tr>
+    <th>Test Case ID</th>
+    <th>Test Steps</th>
+    <th>Input Data</th>
+    <th>Expected Results</th>
+    <th>Actual Results</th>
+    <th>Execution Status</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td><b>TC004</b></td>
+    <td>1. Log in as a standard User.<br>2. Navigate to the /marketplace tab.<br>3. Select a Nutritionist profile.<br>4. Tap "Send Request".</td>
+    <td>Tapped Nutritionist ID</td>
+    <td>AssignmentController writes a new document to the assignment_requests Firestore collection containing the userId and nutritionistId with the status set to 'pending'. The UI button updates to reflect the pending state.</td>
+    <td>As expected, pending request created in Firestore.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC005</b></td>
+    <td>1. Log in as a Nutritionist.<br>2. Navigate to the "Requests" tab (Inbox).<br>3. Locate the incoming pending request.</td>
+    <td>Real-time Firestore Stream</td>
+    <td>The UI dynamically displays the incoming request card in less than 1 second without requiring the user to manually refresh the screen.</td>
+    <td>As expected, stream successfully populated the Inbox.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC006</b></td>
+    <td>1. From the Nutritionist Inbox, locate a pending request.<br>2. Tap the "Accept" button.</td>
+    <td>Tapped "Accept" Action</td>
+    <td>A batch write executes: The assignment_request document status changes to 'accepted', AND the specific UserModel document is updated so assignedNutritionistId equals the Nutritionist's ID. The client moves to the "My Clients" roster.</td>
+    <td>As expected, dual-write successful and client bound to professional.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+</table>
+
+<h2>3. Transient AI Meal Scanner ("Rate My Plate")</h2>
+<table>
+  <tr>
+    <th>Test Case ID</th>
+    <th>Test Steps</th>
+    <th>Input Data</th>
+    <th>Expected Results</th>
+    <th>Actual Results</th>
+    <th>Execution Status</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td><b>TC007</b></td>
+    <td>1. Log in as a User.<br>2. Tap the floating camera icon (/add-meal).<br>3. Capture an image of a meal.</td>
+    <td>Physical Camera Image</td>
+    <td>image_picker successfully captures the image. The app automatically triggers local compression (imageQuality: 50, maxWidth: 800) to reduce the file payload size for faster transmission.</td>
+    <td>As expected, image compressed successfully under 1MB.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC008</b></td>
+    <td>1. Wait for the image processing overlay to finish.</td>
+    <td>Compressed Image Payload</td>
+    <td>The image is transmitted to the GeminiVisionService. The API respects the responseMimeType: 'application/json' configuration and returns a strictly formatted JSON string.</td>
+    <td>As expected, API returned parseable JSON without markdown wrapping.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC009</b></td>
+    <td>1. Observe the populated AI screen.</td>
+    <td>Parsed AiPlateAnalysis object</td>
+    <td>The UI dynamically maps the JSON data, displaying four accurate Macro Estimates (Calories, Protein, Carbs, Fat) and rendering an itemized "Meal Breakdown" ListView.</td>
+    <td>As expected, JSON values accurately reflected in UI widgets.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+  <tr>
+    <td><b>TC010</b></td>
+    <td>1. View the loaded macro estimates.<br>2. Tap the "Done" button at the bottom of the screen.</td>
+    <td>Tapped "Done"</td>
+    <td>GoRouter pops the screen (context.pop()). The app routes back to the dashboard, and the AI data is flushed from memory. No data is written to Firestore or Hive, verifying the transient nature of the feature.</td>
+    <td>As expected, screen closed with no database mutations.</td>
+    <td><b>PASS</b></td>
+    <td>No issues found.</td>
+  </tr>
+</table>
+
+</body>
+</html>
